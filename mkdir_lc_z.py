@@ -26,7 +26,7 @@ phelp = 'division number (number of directory) of lattice constant'
 parser.add_argument('division_num_lattice_const', type=int, help=phelp)
 
 phelp = 'start atomic number'
-parser.add_argument('atomic_number_start', type=int, help=phelp)
+parser.add_argument('atomic_number_start', type=float, help=phelp)
 
 phelp = 'end atomic number'
 parser.add_argument('atomic_number_end', type=float, help=phelp)
