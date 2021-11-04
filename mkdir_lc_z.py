@@ -81,7 +81,7 @@ if args.job:
             try:
                 path = lattice_const_str + "/" + atomic_num_str + "/"
                 os.chdir(path)
-                subprocess.call(JOB_EXECUTION_COMMAND)
+                subprocess.call(JOB_EXECUTION_COMMAND.split())
                 os.chdir(path_root_dir)
             except:
                 print('WARNING! Something wrong happened at the job execution part.')
