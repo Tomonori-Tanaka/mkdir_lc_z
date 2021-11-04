@@ -7,8 +7,9 @@ import shutil
 ANGSTROM_TO_BOHR = 1.8897261246364832
 REPLACED_KEYWORD_LATTICE_CONST = "AAAAA"
 REPLACED_KEYWORD_ATOMIC_NUM = "ZZZZZ"
-AFTER_DECIMAL_POINT_LATTICE_CONST = 2
-AFTER_DECOMAL_POINT_ATOMIC_NUM = 1
+AFTER_DECIMAL_POINT_LATTICE_CONST_DIR = 2
+AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR = 1
+AFTER_DECIMAL_POINT_BOHR = 5
 JOB_SCRIPT_NAME = "job.sh"
 
 parser = argparse.ArgumentParser(description='Make directory trees. lattic const/atomic number/')
@@ -47,15 +48,18 @@ with open(args.input_file_name, mode='r', encoding='utf-8') as f:
 
 for lattice_const in lattice_constants:
     for atomic_num in atomic_numbers:
-        lattice_const = round(lattice_const, AFTER_DECIMAL_POINT_LATTICE_CONST)
-        atomic_num = round(atomic_num, AFTER_DECOMAL_POINT_ATOMIC_NUM)
-        body_replaced = re.sub(REPLACED_KEYWORD_LATTICE_CONST, str(lattice_const), body_source)
+        # lattice_const = round(lattice_const, AFTER_DECIMAL_POINT_LATTICE_CONST)
+        lattice_const_bohr = round(lattice_const*ANGSTROM_TO_BOHR, AFTER_DECIMAL_POINT_BOHR)
+        lattice_const_str = "%.*f"%(AFTER_DECIMAL_POINT_LATTICE_CONST_DIR, lattice_const)
+        atomic_num = round(atomic_num, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
+        atomic_num_str = "%.*f"%(AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR, atomic_num)
+        body_replaced = re.sub(REPLACED_KEYWORD_LATTICE_CONST, str(lattice_const_bohr), body_source)
         body_replaced = re.sub(REPLACED_KEYWORD_ATOMIC_NUM, str(atomic_num), body_replaced)
         try:
-            path = str(lattice_const) + "/" + str(atomic_num) + "/"
-            os.makedire
+            path = lattice_const_str + "/" + atomic_num_str + "/"
+            os.makedirs(path)
         except:
             print('WARNING! Something wrong happened at the make directory part.')
-        with open('{0}{1}'.format(path, args.input_file_name), mode-'w', encoding='utf-8') as f:
+        with open(f'{path}{args.input_file_name}', mode='w', encoding='utf-8') as f:
             f.write(body_replaced)
         shutil.copy(JOB_SCRIPT_NAME, path)
