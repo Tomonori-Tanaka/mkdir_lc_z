@@ -14,8 +14,8 @@ AFTER_DECIMAL_POINT_BOHR = 5
 JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 
-parser = argparse.ArgumentParser(description='Make directory trees\n'
-                                             'lattice const/atomic number/')
+parser = argparse.ArgumentParser(description='Make subdirectory at the end of the main directory trees\n'
+                                             'lattice const/atomic number/tc or j')
 
 phelp = 'start lattice constant (Angstrom)'
 parser.add_argument('lattice_const_start', type=float, help=phelp)
@@ -37,6 +37,9 @@ parser.add_argument('division_num_atomic_num', type=int, help=phelp)
 
 phelp = 'input file name of AkaiKKR'
 parser.add_argument('input_file_name', help=phelp)
+
+phelp = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
+parser.parse_args('subdir_name', choices=['tc', 'j'], help=phelp)
 
 phelp = 'execute job script'
 parser.add_argument('--job', action='store_true', help=phelp)
