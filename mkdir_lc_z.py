@@ -14,13 +14,13 @@ AFTER_DECIMAL_POINT_BOHR = 5
 JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 
-parser = argparse.ArgumentParser(description='Make directory trees\n'
+parser = argparse.ArgumentParser(description='Make directory trees: '
                                              'lattice const/atomic number/')
 
 phelp = 'start lattice constant (Angstrom)'
 parser.add_argument('lattice_const_start', type=float, help=phelp)
 
-phelp = 'end lattice constant (Angstrom'
+phelp = 'end lattice constant (Angstrom)'
 parser.add_argument('lattice_const_end', type=float, help=phelp)
 
 phelp = 'division number (number of directory) of lattice constant'

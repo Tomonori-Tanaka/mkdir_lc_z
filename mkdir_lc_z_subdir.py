@@ -15,13 +15,13 @@ JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 REPLACED_KEYWORD_SCF_MODE = "go"
 
-parser = argparse.ArgumentParser(description='Make subdirectory at the end of the main directory trees\n'
+parser = argparse.ArgumentParser(description='Make subdirectory at the end of the main directory trees: '
                                              'lattice const/atomic number/tc or j')
 
 phelp = 'start lattice constant (Angstrom)'
 parser.add_argument('lattice_const_start', type=float, help=phelp)
 
-phelp = 'end lattice constant (Angstrom'
+phelp = 'end lattice constant (Angstrom)'
 parser.add_argument('lattice_const_end', type=float, help=phelp)
 
 phelp = 'division number (number of directory) of lattice constant'
@@ -63,8 +63,9 @@ if not args.job:
                 path = lattice_const_str + "/" + atomic_num_str + "/"
                 with open(f'{path}{args.input_file_name}', mode='r', encoding='utf-8') as f:
                     body_source = f.read()
-                body_replaced = body_source.replace('go', args.subdir_name, 1)
+                body_replaced = body_source.replace(REPLACED_KEYWORD_SCF_MODE, args.subdir_name, 1)
                 path_subdir = path + args.subdir_name + "/"
+                os.makedirs(path_subdir)
                 with open(f'{path_subdir}{args.input_file_name}', mode='w', encoding='utf-8') as f:
                     f.write(body_replaced)
                 shutil.copy(f'{path}{JOB_SCRIPT_NAME}', path_subdir)
