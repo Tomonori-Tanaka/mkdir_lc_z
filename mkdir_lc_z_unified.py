@@ -125,7 +125,10 @@ for lattice_const in lattice_constants:
                 f.write(body_replaced)
             shutil.copy(JOB_SCRIPT_NAME, path_destination)
             if args.subdir_name is not None:
-                shutil.copy(f'{path_scf}{POTENTIAL_FILE_NAME}', path_destination)
+                try:
+                    shutil.copy(f'{path_scf}{POTENTIAL_FILE_NAME}', path_destination)
+                except:
+                    print("WARNING: Probably potential file data does not exist.")
 
         elif args.action == 'job':
             import subprocess
