@@ -108,7 +108,7 @@ if args.action == "make":
                     pass
                 else:
                     sys.exit("!ERROR!: Parent directory (SCF directory) does not exist.")
-                path_destination = return_path(lattice_const, atomic_num, args.subdir_name)
+                path_destination = return_path(lattice_const_str, atomic_num_str, args.subdir_name)
 
             body_replaced = replace_input_text(body_source,
                                                REPLACED_KEYWORD_LATTICE_CONST=lattice_const_bohr,
