@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import shutil
+from numpy import linspace
 
 ANGSTROM_TO_BOHR = 1.8897261246364832
 REPLACED_KEYWORD_LATTICE_CONST = "AAAAA"
@@ -20,41 +21,34 @@ JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 parser = argparse.ArgumentParser(description='Make directory trees: '
                                              'lattice_const/atomic_number/')
 
-phelp = 'start lattice constant (Angstrom)'
-parser.add_argument('lattice_const_start', type=float, help=phelp)
+help_text = 'start lattice constant (Angstrom)'
+parser.add_argument('lattice_const_start', type=float, help=help_text)
 
-phelp = 'end lattice constant (Angstrom)'
-parser.add_argument('lattice_const_end', type=float, help=phelp)
+help_text = 'end lattice constant (Angstrom)'
+parser.add_argument('lattice_const_end', type=float, help=help_text)
 
-phelp = 'division number (number of directory) of lattice constant'
-parser.add_argument('division_num_lattice_const', type=int, help=phelp)
+help_text = 'division number (number of directory) of lattice constant'
+parser.add_argument('division_num_lattice_const', type=int, help=help_text)
 
-phelp = 'start atomic number'
-parser.add_argument('atomic_number_start', type=float, help=phelp)
+help_text = 'start atomic number'
+parser.add_argument('atomic_number_start', type=float, help=help_text)
 
-phelp = 'end atomic number'
-parser.add_argument('atomic_number_end', type=float, help=phelp)
+help_text = 'end atomic number'
+parser.add_argument('atomic_number_end', type=float, help=help_text)
 
-phelp = 'division number (number of directory) of atomic number'
-parser.add_argument('division_num_atomic_num', type=int, help=phelp)
+help_text = 'division number (number of directory) of atomic number'
+parser.add_argument('division_num_atomic_num', type=int, help=help_text)
 
-phelp = 'input file name of AkaiKKR'
-parser.add_argument('input_file_name', help=phelp)
+help_text = 'input file name of AkaiKKR'
+parser.add_argument('input_file_name', help=help_text)
 
-phelp = 'Action of this script. "make": make directory trees. "job": execute job script. "del": delete directory trees.'
-parser.add_argument('action', choices=['make', 'job', 'del'], help=phelp)
+help_text = 'Action of this script. "make": make directory trees. "job": execute job script. "del": delete directory trees.'
+parser.add_argument('action', choices=['make', 'job', 'del'], help=help_text)
 
-phelp = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
-parser.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=phelp)
+help_text = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
+parser.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=help_text)
 
 args = parser.parse_args()
-
-from numpy import linspace
-
-lattice_constants = linspace(args.lattice_const_start, args.lattice_const_end, args.division_num_lattice_const,
-                             endpoint=True)
-atomic_numbers = linspace(args.atomic_number_start, args.atomic_number_end, args.division_num_atomic_num,
-                          endpoint=True)
 
 
 def return_path(*dir_names):
@@ -63,28 +57,31 @@ def return_path(*dir_names):
     :param dir_names: The names of hierarchies
     :return: absolute path of the directory
     """
-    # os.getcwd() returns the directory without end slash!
-    path = os.getcwd() + "/"
+    path = "/"
     for name in dir_names:
         path = path + name + "/"
     return path
 
 
-def replace_input_text(body_text, **replace_kewword):
+def replace_input_text(body_text, **replace_keyword):
     """
     Replace body text with key(GLOBAL VARIABLE!!!) and value.
     :param body_text: body text which will be replaced
-    :param replace_kewword: dict consists of replaced keyword (global variable) and the value.
+    :param replace_keyword: dict consists of replaced keyword (global variable) and the value.
     :return: Replaced body text
     """
-    for key, value in replace_kewword.items():
+    for key, value in replace_keyword.items():
         body_text = re.sub(globals()[key], value, body_text)
     return body_text
 
-    # ----- main part -----
-    # read body from input file
 
-
+# ----- main part -----
+lattice_constants = linspace(args.lattice_const_start, args.lattice_const_end, args.division_num_lattice_const,
+                             endpoint=True)
+atomic_numbers = linspace(args.atomic_number_start, args.atomic_number_end, args.division_num_atomic_num,
+                          endpoint=True)
+path_root = os.getcwd()
+# read body from input file
 with open(args.input_file_name, mode='r', encoding='utf-8') as f:
     body_source = f.read()
 
@@ -101,7 +98,7 @@ for lattice_const in lattice_constants:
         atomic_num = round(atomic_num, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
         atomic_num_str = "%.*f" % (AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR, atomic_num)
         # get the absolute path of scf directory
-        path_scf = return_path(lattice_const_str, atomic_num_str)
+        path_scf = return_path(path_root, lattice_const_str, atomic_num_str)
         path_destination = path_scf
 
         if args.subdir_name:
@@ -109,7 +106,7 @@ for lattice_const in lattice_constants:
                 pass
             else:
                 sys.exit("!ERROR!: Parent directory (SCF directory) does not exist.")
-            path_destination = return_path(lattice_const_str, atomic_num_str, args.subdir_name)
+            path_destination = return_path(path_root, lattice_const_str, atomic_num_str, args.subdir_name)
 
         if args.action == 'make':
             body_replaced = replace_input_text(body_source,
@@ -118,8 +115,10 @@ for lattice_const in lattice_constants:
                                                REPLACED_KEYWORD_SCF_MODE=kkr_mode)
             try:
                 os.makedirs(path_destination)
-            except:
-                print("Caution! The directory tried to make already exists.")
+            except FileExistsError as e:
+                print(e.strerror)
+                print(e.errno)
+                print(e.filename)
 
             with open(f'{path_destination}{args.input_file_name}', mode='w', encoding='utf-8') as f:
                 f.write(body_replaced)
