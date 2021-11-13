@@ -13,6 +13,7 @@ AFTER_DECIMAL_POINT_LATTICE_CONST_DIR = 2
 AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR = 1
 # decimal point of lattice constant in the input file of AkaiKKR.
 AFTER_DECIMAL_POINT_BOHR = 5
+POTENTIAL_FILE_NAME = "potential.data"
 JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 
@@ -40,7 +41,7 @@ parser.add_argument('division_num_atomic_num', type=int, help=phelp)
 phelp = 'input file name of AkaiKKR'
 parser.add_argument('input_file_name', help=phelp)
 
-phelp = 'Action of this script.'
+phelp = 'Action of this script. "make": make directory trees. "job": execute job script. "del": delete directory trees.'
 parser.add_argument('action', choices=['make', 'job', 'del'], help=phelp)
 
 phelp = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
@@ -80,36 +81,37 @@ def replace_input_text(body_text, **replace_kewword):
         body_text = re.sub(globals()[key], value, body_text)
     return body_text
 
-
-# ----- main part -----
-if args.action == "make":
+    # ----- main part -----
     # read body from input file
-    with open(args.input_file_name, mode='r', encoding='utf-8') as f:
-        body_source = f.read()
 
-    # kkr_mode will be used in text replacing step.
-    if args.subdir_name is None:
-        kkr_mode = "go"
-    else:
-        kkr_mode = args.subdir_name
 
-    for lattice_const in lattice_constants:
-        for atomic_num in atomic_numbers:
-            lattice_const_str = "%.*f" % (AFTER_DECIMAL_POINT_LATTICE_CONST_DIR, lattice_const)
-            lattice_const_bohr = str(round(lattice_const * ANGSTROM_TO_BOHR, AFTER_DECIMAL_POINT_BOHR))
-            atomic_num = round(atomic_num, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
-            atomic_num_str = "%.*f" % (AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR, atomic_num)
-            # get the absolute path of scf directory
-            path_scf = return_path(lattice_const_str, atomic_num_str)
-            path_destination = path_scf
+with open(args.input_file_name, mode='r', encoding='utf-8') as f:
+    body_source = f.read()
 
-            if args.subdir_name:
-                if os.path.exists(path_scf):
-                    pass
-                else:
-                    sys.exit("!ERROR!: Parent directory (SCF directory) does not exist.")
-                path_destination = return_path(lattice_const_str, atomic_num_str, args.subdir_name)
+# kkr_mode will be used in text replacing step.
+if args.subdir_name is None:
+    kkr_mode = "go"
+else:
+    kkr_mode = args.subdir_name
 
+for lattice_const in lattice_constants:
+    for atomic_num in atomic_numbers:
+        lattice_const_str = "%.*f" % (AFTER_DECIMAL_POINT_LATTICE_CONST_DIR, lattice_const)
+        lattice_const_bohr = str(round(lattice_const * ANGSTROM_TO_BOHR, AFTER_DECIMAL_POINT_BOHR))
+        atomic_num = round(atomic_num, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
+        atomic_num_str = "%.*f" % (AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR, atomic_num)
+        # get the absolute path of scf directory
+        path_scf = return_path(lattice_const_str, atomic_num_str)
+        path_destination = path_scf
+
+        if args.subdir_name:
+            if os.path.exists(path_scf):
+                pass
+            else:
+                sys.exit("!ERROR!: Parent directory (SCF directory) does not exist.")
+            path_destination = return_path(lattice_const_str, atomic_num_str, args.subdir_name)
+
+        if args.action == 'make':
             body_replaced = replace_input_text(body_source,
                                                REPLACED_KEYWORD_LATTICE_CONST=lattice_const_bohr,
                                                REPLACED_KEYWORD_ATOMIC_NUM=atomic_num_str,
@@ -122,20 +124,20 @@ if args.action == "make":
             with open(f'{path_destination}{args.input_file_name}', mode='w', encoding='utf-8') as f:
                 f.write(body_replaced)
             shutil.copy(JOB_SCRIPT_NAME, path_destination)
-"""
-import subprocess
+            if args.subdir_name is not None:
+                shutil.copy(f'{path_scf}{POTENTIAL_FILE_NAME}', path_destination)
 
-path_root_dir = os.getcwd()
-for lattice_const in lattice_constants:
-    for atomic_num in atomic_numbers:
-        lattice_const_str = "%.*f" % (AFTER_DECIMAL_POINT_LATTICE_CONST_DIR, lattice_const)
-        atomic_num = round(atomic_num, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
-        atomic_num_str = "%.*f" % (AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR, atomic_num)
-        try:
-            path = lattice_const_str + "/" + atomic_num_str + "/"
-            os.chdir(path)
-            subprocess.call(JOB_EXECUTION_COMMAND.split())
-            os.chdir(path_root_dir)
-        except:
-            print('WARNING! Something wrong happened at the job execution part.')
-"""
+        elif args.action == 'job':
+            import subprocess
+
+            try:
+                os.chdir(path_destination)
+                subprocess.call(JOB_EXECUTION_COMMAND.split())
+            except:
+                print('WARNING! Something wrong happened at the job execution part.')
+
+        elif args.action == 'del':
+            try:
+                shutil.rmtree(path_destination)
+            except:
+                print('WARNING! Something wrong happened at the remove directory part.')
