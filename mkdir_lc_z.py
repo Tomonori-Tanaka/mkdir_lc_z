@@ -62,9 +62,9 @@ args = parser.parse_args()
 
 def return_path(*dir_names):
     """
-    Return absolute path of the directory.
+    Return path of the directory.
     :param dir_names: The names of hierarchies
-    :return: absolute path of the directory
+    :return: path of the directory
     """
     path = ""
     for name in dir_names:
