@@ -166,7 +166,8 @@ for lattice_const in lattice_constants:
                         subprocess.call(JOB_EXECUTION_COMMAND.split())
                     else:
                         continue
-            subprocess.call(JOB_EXECUTION_COMMAND.split())
+            else:
+                subprocess.call(JOB_EXECUTION_COMMAND.split())
 
         elif args.action == 'del':
             try:
