@@ -1,8 +1,8 @@
 import argparse
 import os
-import sys
 import re
 import shutil
+import sys
 from numpy import linspace
 
 ANGSTROM_TO_BOHR = 1.8897261246364832
@@ -43,11 +43,20 @@ parser.add_argument('division_num_atomic_num', type=int, help=help_text)
 help_text = 'input file name of AkaiKKR'
 parser.add_argument('input_file_name', help=help_text)
 
-help_text = 'Action of this script. "make": make directory trees. "job": execute job script. "del": delete directory trees.'
+help_text = 'action of this script. ' \
+            '"make": make directory trees. ' \
+            '"job": execute job script. ' \
+            '"del": delete directory trees.'
 parser.add_argument('action', choices=['make', 'job', 'del'], help=help_text)
 
-help_text = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
-parser.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=help_text)
+limit_group = parser.add_mutually_exclusive_group()
+
+help_text = 'subdirectory name; Keyword is restricted to "tc" or "j" in the current version.'
+limit_group.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=help_text)
+
+help_text = 'absolute path of root dir when copying potential file; ' \
+            'This option is only available for the make action without subdir_name option.'
+limit_group.add_argument('-path', '--root_path', help=help_text)
 
 help_text = 'calculate only not convergence systems'
 parser.add_argument('--continue', action='store_true', help=help_text)
@@ -57,11 +66,11 @@ args = parser.parse_args()
 
 def return_path(*dir_names):
     """
-    Return absolute path of the directory.
+    Return path of the directory.
     :param dir_names: The names of hierarchies
-    :return: absolute path of the directory
+    :return: path of the directory
     """
-    path = "/"
+    path = ""
     for name in dir_names:
         path = path + name + "/"
     return path
@@ -127,11 +136,23 @@ for lattice_const in lattice_constants:
             with open(f'{path_destination}{args.input_file_name}', mode='w', encoding='utf-8') as f:
                 f.write(body_replaced)
             shutil.copy(JOB_SCRIPT_NAME, path_destination)
-            if args.subdir_name is not None:
+
+            if args.root_path:
+                try:
+                    os.path.exists(args.root_path)
+                    path_potential_file_src = return_path(args.root_path, lattice_const_str, atomic_num_str)
+                    shutil.copy(f'{path_potential_file_src}{POTENTIAL_FILE_NAME}', path_destination)
+                except FileExistsError as e:
+                    print(e.strerror)
+                    print(e.errno)
+                    print(e.filename)
+
+            if args.subdir_name:
                 try:
                     shutil.copy(f'{path_scf}{POTENTIAL_FILE_NAME}', path_destination)
                 except:
                     print("WARNING: Probably potential file data does not exist.")
+
 
         elif args.action == 'job':
             import subprocess
