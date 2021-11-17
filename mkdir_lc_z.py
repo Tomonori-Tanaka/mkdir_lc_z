@@ -17,6 +17,7 @@ AFTER_DECIMAL_POINT_BOHR = 5
 POTENTIAL_FILE_NAME = "potential.data"
 JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
+CONVERGENCE_CHECK_KEYWORD = "no convergence"
 
 parser = argparse.ArgumentParser(description='Make directory trees: '
                                              'lattice_const/atomic_number/')
@@ -47,6 +48,9 @@ parser.add_argument('action', choices=['make', 'job', 'del'], help=help_text)
 
 help_text = 'subdirectory name. Keyword is restricted to "tc" or "j" in the current version.'
 parser.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=help_text)
+
+help_text = 'calculate only not convergence systems'
+parser.add_argument('--continue', action='store_true', help=help_text)
 
 args = parser.parse_args()
 
