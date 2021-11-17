@@ -18,6 +18,7 @@ POTENTIAL_FILE_NAME = "potential.data"
 JOB_SCRIPT_NAME = "job.sh"
 JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
 CONVERGENCE_CHECK_KEYWORD = "no convergence"
+OUTPUT_FILE_NAME = "output.dat"
 
 parser = argparse.ArgumentParser(description='Make directory trees: '
                                              'lattice_const/atomic_number/')
@@ -59,7 +60,7 @@ help_text = 'absolute path of root dir when copying potential file; ' \
 limit_group.add_argument('-path', '--root_path', help=help_text)
 
 help_text = 'calculate only not convergence systems'
-parser.add_argument('--continue', action='store_true', help=help_text)
+parser.add_argument('--re_calc', action='store_true', help=help_text)
 
 args = parser.parse_args()
 
@@ -157,11 +158,15 @@ for lattice_const in lattice_constants:
         elif args.action == 'job':
             import subprocess
 
-            try:
-                os.chdir(path_destination)
-                subprocess.call(JOB_EXECUTION_COMMAND.split())
-            except:
-                print('WARNING! Something wrong happened at the job execution part.')
+            os.chdir(path_destination)
+            if args.re_calc:
+                with open(f'{path_destination}{OUTPUT_FILE_NAME}', mode='r', encoding='utf-8') as f:
+                    output_file_body = f.read()
+                    if CONVERGENCE_CHECK_KEYWORD in output_file_body:
+                        subprocess.call(JOB_EXECUTION_COMMAND.split())
+                    else:
+                        continue
+            subprocess.call(JOB_EXECUTION_COMMAND.split())
 
         elif args.action == 'del':
             try:
