@@ -2,7 +2,7 @@ c---------------------- (Mn-Co)(Mn-Co) -----------------------------
      go   potential.data
 c------------------------------------------------------------
 c   brvtyp      a        c/a   b/a   alpha   beta   gamma
-     bct   AAAAA , 0.99999, ,,,,
+     bct   AAAAA , CCCCC, ,,,,
 c------------------------------------------------------------
 c   edelt    ewidth    reltyp   sdftyp   magtyp   record
     0.001       0.85    sra    mjwasa    mag       2nd

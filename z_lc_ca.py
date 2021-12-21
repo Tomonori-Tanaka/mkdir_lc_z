@@ -64,7 +64,7 @@ if __name__ == '__main__':
                 '"make": make directory trees. ' \
                 '"job": execute job script. ' \
                 '"del": delete directory trees.'
-    parser.add_argument('action', choices=['make', 'job', 'del'], help=help_text)
+    parser.add_argument('action', choices=['make', 'job', 'del', 'restart'], help=help_text)
 
     help_text = 'input file name of AkaiKKR'
     parser.add_argument('input_file_name', help=help_text)
@@ -74,12 +74,9 @@ if __name__ == '__main__':
     help_text = 'subdirectory name; Keyword is restricted to "tc" or "j" in the current version.'
     limit_group.add_argument('-sub', '--subdir_name', choices=['tc', 'j'], help=help_text)
 
-    help_text = 'absolute path of root dir when copying potential file; ' \
+    help_text = 'absolute path when copying potential file; ' \
                 'This option is only available for the make action not including subdir_name option.'
-    limit_group.add_argument('-path', '--root_path', help=help_text)
-
-    help_text = 'calculate only not convergence systems'
-    parser.add_argument('--re_calc', action='store_true', help=help_text)
+    limit_group.add_argument('-path', '--reference_path', help=help_text)
 
     args = parser.parse_args()
 
@@ -119,6 +116,7 @@ if __name__ == '__main__':
             kkr_mode = args.subdir_name
 
         lists_of_dirs = tree_instance.get_each_element_in_paths()
+        print("hee")
         for list in lists_of_dirs:
             atomic_number = list[0]
             lattice_constant_bohr = round(list[1] * ANGSTROM_TO_BOHR, AFTER_DECIMAL_POINT_BOHR)
@@ -132,12 +130,16 @@ if __name__ == '__main__':
                                               REPLACED_KEYWORD_SCF_MODE=kkr_mode)
             with open(f"{path_scf}/{args.input_file_name}", mode='w', encoding='utf-8') as f:
                 f.write(body_replaced)
+            if args.reference_path:
+                path_potential_file_ref = "/".join([args.reference_path, path_scf])
+                shutil.copy(f'{path_potential_file_ref}{POTENTIAL_FILE_NAME}', path_scf)
             if args.subdir_name:
                 shutil.copy(f'{path_scf}/{POTENTIAL_FILE_NAME}', f"{path_scf}/{args.subdir_name}")
-        tree_instance.copy_files("temporary.dat", JOB_SCRIPT_NAME)
-
+        tree_instance.copy_files(JOB_SCRIPT_NAME)
 
     elif args.action == 'del':
         tree_instance.delete_directory()
     elif args.action == 'job':
         tree_instance.job_execution(job_command=JOB_SUBMIT_COMMAND, job_script=JOB_SCRIPT_NAME)
+    elif args.action == 'restart':
+        pass
