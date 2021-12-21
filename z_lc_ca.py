@@ -18,6 +18,7 @@ if __name__ == '__main__':
     import numpy as np
     from numpy import linspace
     import operate_dir_tree
+    import shutil
 
     JOB_SCRIPT_NAME = "job.sh"
     JOB_SUBMIT_COMMAND = "pjsub"
@@ -120,17 +121,20 @@ if __name__ == '__main__':
         lists_of_dirs = tree_instance.get_each_element_in_paths()
         for list in lists_of_dirs:
             atomic_number = list[0]
-            lattice_constant_bohr = list[1] * ANGSTROM_TO_BOHR
+            lattice_constant_bohr = round(list[1] * ANGSTROM_TO_BOHR, AFTER_DECIMAL_POINT_BOHR)
             c_over_a = list[2]
-            path = str(list[0])
+
+            path_scf = "/".join(map(str, [list[0], list[1], list[2]]))
             body_replaced = replace_text_body(body_source,
                                               REPLACED_KEYWORD_ATOMIC_NUM=str(atomic_number),
                                               REPLACED_KEYWORD_LATTICE_CONST=str(lattice_constant_bohr),
                                               REPLACED_KEYWORD_C_OVER_A=str(c_over_a),
                                               REPLACED_KEYWORD_SCF_MODE=kkr_mode)
-            with open("temporary.dat", mode='w', encoding='utf-8') as f:
+            with open(f"{path_scf}/{args.input_file_name}", mode='w', encoding='utf-8') as f:
                 f.write(body_replaced)
-            tree_instance.copy_files("temporary.dat", JOB_SCRIPT_NAME)
+            if args.subdir_name:
+                shutil.copy(f'{path_scf}/{POTENTIAL_FILE_NAME}', f"{path_scf}/{args.subdir_name}")
+        tree_instance.copy_files("temporary.dat", JOB_SCRIPT_NAME)
 
 
     elif args.action == 'del':
