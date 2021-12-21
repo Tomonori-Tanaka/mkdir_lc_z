@@ -23,6 +23,9 @@ class OperationDirTree:
             result = [x+[y] for x in result for y in list]
         return result
 
+    def get_each_element_in_paths(self):
+        return self.list_of_dir_name_list
+
     def print_dir_trees(self):
         pprint.pprint(self.list_path)
 

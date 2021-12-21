@@ -1,5 +1,6 @@
 import re
 
+
 def replace_text_body(text_body, **replace_keyword):
     """
     Replace body text with key(GLOBAL VARIABLE!!!) and value.
@@ -11,13 +12,29 @@ def replace_text_body(text_body, **replace_keyword):
         body_text = re.sub(globals()[key], value, text_body)
     return text_body
 
+
 if __name__ == '__main__':
     import argparse
+    import numpy as np
     from numpy import linspace
     import operate_dir_tree
 
     JOB_SCRIPT_NAME = "job.sh"
     JOB_SUBMIT_COMMAND = "pjsub"
+    ANGSTROM_TO_BOHR = 1.8897261246364832
+    REPLACED_KEYWORD_LATTICE_CONST = "AAAAA"
+    REPLACED_KEYWORD_ATOMIC_NUM = "ZZZZZ"
+    REPLACED_KEYWORD_C_OVER_A = "CCCCC"
+    # Replaced keyword for tc or j mode. Usually it is "go"
+    REPLACED_KEYWORD_SCF_MODE = "go"
+    AFTER_DECIMAL_POINT_LATTICE_CONST_DIR = 2
+    AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR = 1
+    AFTER_DECIMAL_POINT_C_OVER_A = 6
+    # decimal point of lattice constant in the input file of AkaiKKR.
+    AFTER_DECIMAL_POINT_BOHR = 5
+    POTENTIAL_FILE_NAME = "potential.data"
+    CONVERGENCE_CHECK_KEYWORD = "no convergence"
+    OUTPUT_FILE_NAME = "output.dat"
 
     parser = argparse.ArgumentParser(description='Make directory trees: '
                                                  'atomic_num/lattice_const/c_over_a/')
@@ -69,36 +86,54 @@ if __name__ == '__main__':
                                   args.atomic_number_end,
                                   args.atomic_number_num,
                                   endpoint=True)
+    atomic_number_list = np.round(atomic_number_list, AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR)
     lattice_constant_list = linspace(args.lattice_constant_start,
                                      args.lattice_constant_end,
                                      args.lattice_constant_num,
                                      endpoint=True)
+    lattice_constant_list = np.round(lattice_constant_list, AFTER_DECIMAL_POINT_LATTICE_CONST_DIR)
     c_over_a_list = linspace(args.c_over_a_start,
                              args.c_over_a_end,
                              args.c_over_a_num,
                              endpoint=True)
-
-    with open(args.input_file_name, mode='r', encoding='utf-8') as f:
-        body_source = f.read()
-
-    if args.subdir_name is None:
-        kkr_mode = "go"
-    else:
-        kkr_mode = args.subdir_name
+    c_over_a_list = np.round(c_over_a_list, AFTER_DECIMAL_POINT_C_OVER_A)
 
     if args.subdir_name:
         tree_instance = operate_dir_tree.OperationDirTree(atomic_number_list,
-                                                      lattice_constant_list,
-                                                      c_over_a_list,
-                                                      [args.subdir_name])
+                                                          lattice_constant_list,
+                                                          c_over_a_list,
+                                                          [args.subdir_name])
     else:
         tree_instance = operate_dir_tree.OperationDirTree(atomic_number_list,
                                                           lattice_constant_list,
                                                           c_over_a_list)
+
     if args.action == 'make':
         tree_instance.make_directory()
+        with open(args.input_file_name, mode='r', encoding='utf-8') as f:
+            body_source = f.read()
+        if args.subdir_name is None:
+            kkr_mode = "go"
+        else:
+            kkr_mode = args.subdir_name
+
+        lists_of_dirs = tree_instance.get_each_element_in_paths()
+        for list in lists_of_dirs:
+            atomic_number = list[0]
+            lattice_constant_bohr = list[1] * ANGSTROM_TO_BOHR
+            c_over_a = list[2]
+            path = str(list[0])
+            body_replaced = replace_text_body(body_source,
+                                              REPLACED_KEYWORD_ATOMIC_NUM=str(atomic_number),
+                                              REPLACED_KEYWORD_LATTICE_CONST=str(lattice_constant_bohr),
+                                              REPLACED_KEYWORD_C_OVER_A=str(c_over_a),
+                                              REPLACED_KEYWORD_SCF_MODE=kkr_mode)
+            with open("temporary.dat", mode='w', encoding='utf-8') as f:
+                f.write(body_replaced)
+            tree_instance.copy_files("temporary.dat", JOB_SCRIPT_NAME)
+
+
     elif args.action == 'del':
         tree_instance.delete_directory()
     elif args.action == 'job':
         tree_instance.job_execution(job_command=JOB_SUBMIT_COMMAND, job_script=JOB_SCRIPT_NAME)
-
