@@ -1,38 +1,6 @@
-import argparse
 import re
-import os
 
-from numpy import linspace
-
-ANGSTROM_TO_BOHR = 1.8897261246364832
-REPLACED_KEYWORD_LATTICE_CONST = "AAAAA"
-REPLACED_KEYWORD_ATOMIC_NUM = "ZZZZZ"
-# Replaced keyword for tc or j mode. Usually it is "go"
-REPLACED_KEYWORD_SCF_MODE = "go"
-AFTER_DECIMAL_POINT_LATTICE_CONST_DIR = 2
-AFTER_DECIMAL_POINT_ATOMIC_NUM_DIR = 1
-# decimal point of lattice constant in the input file of AkaiKKR.
-AFTER_DECIMAL_POINT_BOHR = 5
-POTENTIAL_FILE_NAME = "potential.data"
-JOB_SCRIPT_NAME = "job.sh"
-JOB_EXECUTION_COMMAND = f"pjsub {JOB_SCRIPT_NAME}"
-CONVERGENCE_CHECK_KEYWORD = "no convergence"
-OUTPUT_FILE_NAME = "output.dat"
-
-
-def return_path(*dir_names):
-    """
-    Return path of the directory.
-    :param dir_names: The names of hierarchies
-    :return: path of the directory
-    """
-    path = ""
-    for name in dir_names:
-        path = path + name + "/"
-    return path
-
-
-def replace_input_text(body_text, **replace_keyword):
+def replace_text_body(text_body, **replace_keyword):
     """
     Replace body text with key(GLOBAL VARIABLE!!!) and value.
     :param body_text: body text which will be replaced
@@ -40,11 +8,17 @@ def replace_input_text(body_text, **replace_keyword):
     :return: Replaced body text
     """
     for key, value in replace_keyword.items():
-        body_text = re.sub(globals()[key], value, body_text)
-    return body_text
+        body_text = re.sub(globals()[key], value, text_body)
+    return text_body
 
+if __name__ == '__main__':
+    import argparse
+    from numpy import linspace
+    import operate_dir_tree
 
-if __name__ == "__main__":
+    JOB_SCRIPT_NAME = "job.sh"
+    JOB_SUBMIT_COMMAND = "pjsub"
+
     parser = argparse.ArgumentParser(description='Make directory trees: '
                                                  'atomic_num/lattice_const/c_over_a/')
     help_text = 'start atomic number'
@@ -59,7 +33,7 @@ if __name__ == "__main__":
     help_text = 'end lattice constant in the conventional bcc cell (Angstrom)'
     parser.add_argument('lattice_constant_end', type=float, help=help_text)
     help_text = 'element number of lattice constant list'
-    parser.add_argument('lattice_const_num', type=int, help=help_text)
+    parser.add_argument('lattice_constant_num', type=int, help=help_text)
 
     help_text = 'start c/a'
     parser.add_argument('c_over_a_start', type=float, help=help_text)
@@ -73,6 +47,9 @@ if __name__ == "__main__":
                 '"job": execute job script. ' \
                 '"del": delete directory trees.'
     parser.add_argument('action', choices=['make', 'job', 'del'], help=help_text)
+
+    help_text = 'input file name of AkaiKKR'
+    parser.add_argument('input_file_name', help=help_text)
 
     limit_group = parser.add_mutually_exclusive_group()
 
@@ -92,24 +69,36 @@ if __name__ == "__main__":
                                   args.atomic_number_end,
                                   args.atomic_number_num,
                                   endpoint=True)
-    lattice_constant_list = linspace(args.lattice_const_start,
-                                     args.lattice_const_end,
-                                     args.lattice_const_num,
+    lattice_constant_list = linspace(args.lattice_constant_start,
+                                     args.lattice_constant_end,
+                                     args.lattice_constant_num,
                                      endpoint=True)
     c_over_a_list = linspace(args.c_over_a_start,
                              args.c_over_a_end,
                              args.c_over_a_num,
                              endpoint=True)
 
-    path_root = os.getcwd()
-    # read body from input file
     with open(args.input_file_name, mode='r', encoding='utf-8') as f:
         body_source = f.read()
-    # kkr_mode will be used in text replacing step.
+
     if args.subdir_name is None:
         kkr_mode = "go"
     else:
         kkr_mode = args.subdir_name
 
-
+    if args.subdir_name:
+        tree_instance = operate_dir_tree.OperationDirTree(atomic_number_list,
+                                                      lattice_constant_list,
+                                                      c_over_a_list,
+                                                      [args.subdir_name])
+    else:
+        tree_instance = operate_dir_tree.OperationDirTree(atomic_number_list,
+                                                          lattice_constant_list,
+                                                          c_over_a_list)
+    if args.action == 'make':
+        tree_instance.make_directory()
+    elif args.action == 'del':
+        tree_instance.delete_directory()
+    elif args.action == 'job':
+        tree_instance.job_execution(job_command=JOB_SUBMIT_COMMAND, job_script=JOB_SCRIPT_NAME)
 
