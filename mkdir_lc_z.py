@@ -62,6 +62,9 @@ limit_group.add_argument('-path', '--root_path', help=help_text)
 help_text = 'calculate only not convergence systems'
 parser.add_argument('--re_calc', action='store_true', help=help_text)
 
+help_test = 'make dlm dir switch and path of fm dir'
+parser.add_argment('-dlm', help=help_text)
+
 args = parser.parse_args()
 
 
