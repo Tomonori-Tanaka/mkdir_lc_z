@@ -113,28 +113,28 @@ for lattice_const in lattice_constants:
                                                REPLACED_KEYWORD_SCF_MODE=kkr_mode)
             try:
                 os.makedirs(path_destination)
+                with open(os.path.join(path_destination, args.input_file_name), mode='w', encoding='utf-8') as f:
+                    f.write(body_replaced)
+                shutil.copy(JOB_SCRIPT_NAME, path_destination)
+                shutil.copy(FMG_FILE_NAME, path_destination)
+
+                # make lmd potential data
+                if not args.subdir_name:
+                    os.chdir(path_destination)
+                    subprocess.run("fmg < fmg.in", shell=True)
+                    os.chdir(path_destination)
+
+
+                if args.subdir_name:
+                    try:
+                        shutil.copy(os.path.join(path_scf, POTENTIAL_FILE_NAME), path_destination)
+                    except:
+                        print("WARNING: Probably potential file data does not exist.")
             except FileExistsError as e:
                 print(e.strerror)
                 print(e.errno)
                 print(e.filename)
 
-            with open(os.path.join(path_destination, args.input_file_name), mode='w', encoding='utf-8') as f:
-                f.write(body_replaced)
-            shutil.copy(JOB_SCRIPT_NAME, path_destination)
-            shutil.copy(FMG_FILE_NAME, path_destination)
-
-            # make lmd potential data
-            if not args.subdir_name:
-                os.chdir(path_destination)
-                subprocess.run("fmg < fmg.in", shell=True)
-                os.chdir(path_destination)
-
-
-            if args.subdir_name:
-                try:
-                    shutil.copy(os.path.join(path_scf, POTENTIAL_FILE_NAME), path_destination)
-                except:
-                    print("WARNING: Probably potential file data does not exist.")
 
         elif args.action == 'job':
 
